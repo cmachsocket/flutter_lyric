@@ -224,7 +224,8 @@ class YrcParser extends LyricParse {
     String line,
     Map<int, String> translationMap,
   ) {
-    final header = _lineHeader.firstMatch(line);
+    final trimmed = line.trimLeft();
+    final header = _lineHeader.firstMatch(trimmed);
     if (header == null) return null;
     final startMs = int.parse(header.group(1)!);
     final durationMs = int.parse(header.group(2)!);
