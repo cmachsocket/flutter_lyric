@@ -1,3 +1,9 @@
+## [3.0.8]
+
+### Added
+
+* `YrcParser` for Netease Cloud Music word-by-word `.yrc` lyrics (`(start,dur,0)text`) and JSON credit headers ([#43](https://github.com/ozyl/flutter_lyric/issues/43)).
+
 ## [3.0.7]
 
 ### Fixed
