@@ -58,4 +58,81 @@ void main() {
       expect(model.lines.single.translation, '「早上好」');
     });
   });
+
+  group('YrcParser', () {
+    const yrcLine =
+        '[54260,3090](54260,900,0)Stop (55160,480,0)and (55640,1710,0)stare';
+    const qrcLine =
+        '[126,3253]Doctor (126,1037)actor (1163,479)lawyer (1642,479)or (2121,399)a (2520,191)singer(2711,668)';
+    const qrcXml = '''
+<?xml version="1.0" encoding="utf-8"?>
+<QrcInfos>
+<Lyric_1 LyricType="1" LyricContent="[ti:Be what you wanna be]
+[126,3253]Doctor (126,1037)actor (1163,479)lawyer (1642,479)or (2121,399)a (2520,191)singer(2711,668)
+"/>
+</QrcInfos>
+''';
+
+    test('isMatch distinguishes YRC from QRC and LRC', () {
+      expect(YrcParser().isMatch(yrcLine), isTrue);
+      expect(YrcParser().isMatch(qrcLine), isFalse);
+      expect(YrcParser().isMatch('[00:54.260]Stop and stare'), isFalse);
+      expect(QrcParser().isMatch(yrcLine), isFalse);
+      expect(QrcParser().isMatch(qrcLine), isTrue);
+    });
+
+    test('parseRaw extracts syllable times and keeps spaces', () {
+      final model = YrcParser().parseRaw(yrcLine);
+      expect(model.lines, hasLength(1));
+      final line = model.lines.single;
+      expect(line.start.inMilliseconds, 54260);
+      expect(line.end!.inMilliseconds, 57350);
+      expect(line.text, 'Stop and stare');
+      expect(line.words, hasLength(3));
+      expect(line.words![0].text, 'Stop ');
+      expect(line.words![0].start.inMilliseconds, 54260);
+      expect(line.words![0].end!.inMilliseconds, 55160);
+      expect(line.words![1].text, 'and ');
+      expect(line.words![1].start.inMilliseconds, 55160);
+      expect(line.words![1].end!.inMilliseconds, 55640);
+      expect(line.words![2].text, 'stare');
+      expect(line.words![2].start.inMilliseconds, 55640);
+      expect(line.words![2].end!.inMilliseconds, 57350);
+    });
+
+    test('parseRaw joins Netease JSON credit header', () {
+      const lyric =
+          '{"t":0,"c":[{"tx":"作词: "},{"tx":"Brent Kutzle"}]}\n$yrcLine';
+      final model = YrcParser().parseRaw(lyric);
+      expect(model.lines, hasLength(2));
+      expect(model.lines[0].start.inMilliseconds, 0);
+      expect(model.lines[0].text, '作词: Brent Kutzle');
+      expect(model.lines[0].words, isNull);
+      expect(model.lines[1].text, 'Stop and stare');
+    });
+
+    test('parseRaw matches LRC translation by line start', () {
+      const translation = '[00:54.260]停下注视';
+      final model = YrcParser().parseRaw(
+        yrcLine,
+        translationLyric: translation,
+      );
+      expect(model.lines.single.translation, '停下注视');
+    });
+
+    test('LyricParse.parse auto-selects YrcParser', () {
+      const lyric =
+          '{"t":0,"c":[{"tx":"作词: "},{"tx":"Brent Kutzle"}]}\n$yrcLine';
+      final model = LyricParse.parse(lyric);
+      expect(model.lines, hasLength(2));
+      expect(model.lines[1].words, hasLength(3));
+    });
+
+    test('LyricParse.parse still handles QRC XML', () {
+      final model = LyricParse.parse(qrcXml);
+      expect(model.lines, isNotEmpty);
+      expect(model.lines.last.text, 'Doctor actor lawyer or a singer');
+      expect(model.lines.last.words, isNotEmpty);
+    });
+  });
 }

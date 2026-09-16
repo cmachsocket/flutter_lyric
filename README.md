@@ -24,7 +24,7 @@
 - 🌀 平滑滚动：多段滚动时长映射、惯性与自定义锚点，避免跳动
 - 🎯 触摸交互：拖拽选择、点击行、自动恢复、高亮锚点指示
 - 🎨 高度可定制：`LyricStyle` 暴露 30+ 参数，可快速打造品牌化主题
-- 📦 内置解析：默认支持 `.lrc` 与 `.qrc`，可注入自定义解析器
+- 📦 内置解析：默认支持 `.lrc`、`.qrc` 与 `.yrc`，可注入自定义解析器
 - 🧱 Mixins 设计：滚动、遮罩、行切换、高亮逻辑模块化，方便二次开发
 
 **English**
@@ -33,7 +33,7 @@
 - 🌀 Smooth scrolling with distance-based duration mapping, inertia, and configurable anchors
 - 🎯 Touch interactions for scrubbing, tapping, auto-resume, and anchor indicators
 - 🎨 Deep customization via 30+ `LyricStyle` parameters to match any visual identity
-- 📦 Built-in parsers for `.lrc` and `.qrc`, plus hooks for custom formats
+- 📦 Built-in parsers for `.lrc`, `.qrc`, and `.yrc`, plus hooks for custom formats
 - 🧱 Mixin-based architecture so scroll, mask, switch, and highlight logic can be recomposed
 
 ## 🚀 安装 · Installation
@@ -155,10 +155,10 @@ Use the built-in callbacks/events to react to gestures, e.g. seeking on tap or s
 ## 📄 翻译歌词解析 · Translation Parsing
 
 **中文**  
-`loadLyric` 支持额外的翻译文本，库会按时间戳自动匹配；若你有自定义协议，可实现 `LyricParse` 并调用 `parseRaw` 或直接注入 `LyricModel`。
+`loadLyric` 会自动识别 `.lrc` / `.qrc` / `.yrc`（网易云逐字明文），并支持额外的翻译文本，库会按时间戳自动匹配；若你有自定义协议，可实现 `LyricParse` 并调用 `parseRaw` 或直接注入 `LyricModel`。
 
 **English**  
-`loadLyric` accepts an optional translation string that is aligned by timestamp. For custom formats, implement `LyricParse` or build your own `LyricModel`.
+`loadLyric` auto-detects `.lrc`, `.qrc`, and `.yrc` (Netease Cloud Music word-by-word plaintext) and accepts an optional translation string that is aligned by timestamp. For custom formats, implement `LyricParse` or build your own `LyricModel`.
 
 ```dart
 final customModel = CustomParser().parseRaw(rawLyric);
