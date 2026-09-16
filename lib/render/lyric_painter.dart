@@ -309,7 +309,7 @@ class LyricPainter extends CustomPainter {
     final painter = isActive ? metric.activeTextPainter : metric.textPainter;
     final oldSpan = painter.text! as TextSpan;
 
-    final hasWordHighlight = isActive && metric.words?.isNotEmpty == true;
+    final hasWordHighlight = metric.words?.isNotEmpty == true;
 
     double highlightOpacity = 1.0;
     Color? animatedMainColor;
@@ -320,8 +320,9 @@ class LyricPainter extends CustomPainter {
 
       if (index == switchState.enterIndex) {
         if (hasWordHighlight) {
-          // 逐字歌词不能让整行参与 activeStyle 的颜色动画。
-          // 高亮颜色由 drawHighlight() 单独控制。
+          // 逐字歌词：
+          // 底层始终保持普通歌词颜色，
+          // 不参与 activeStyle.color 的行切换动画。
           animatedMainColor = normalColor;
           highlightOpacity = 1.0;
         } else {
@@ -333,12 +334,19 @@ class LyricPainter extends CustomPainter {
           highlightOpacity = switchState.enterAnimationValue;
         }
       } else if (index == switchState.exitIndex) {
-        animatedMainColor = Color.lerp(
-          activeColor,
-          normalColor,
-          switchState.exitAnimationValue,
-        );
-        highlightOpacity = 1.0 - switchState.exitAnimationValue;
+        if (hasWordHighlight) {
+          // 如果退出的也是逐字歌词，不要把整行 activeColor
+          // 再显示出来。
+          animatedMainColor = normalColor;
+          highlightOpacity = 0.0;
+        } else {
+          animatedMainColor = Color.lerp(
+            activeColor,
+            normalColor,
+            switchState.exitAnimationValue,
+          );
+          highlightOpacity = 1.0 - switchState.exitAnimationValue;
+        }
       }
     }
 
