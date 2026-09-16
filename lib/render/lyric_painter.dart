@@ -309,19 +309,35 @@ class LyricPainter extends CustomPainter {
     final painter = isActive ? metric.activeTextPainter : metric.textPainter;
     final oldSpan = painter.text! as TextSpan;
 
+    final hasWordHighlight = isActive && metric.words?.isNotEmpty == true;
+
     double highlightOpacity = 1.0;
     Color? animatedMainColor;
+
     if (style.enableSwitchAnimation) {
       final normalColor = layoutStyle.textStyle.color;
       final activeColor = layoutStyle.activeStyle.color;
 
       if (index == switchState.enterIndex) {
-        animatedMainColor = Color.lerp(
-            normalColor, activeColor, switchState.enterAnimationValue);
-        highlightOpacity = switchState.enterAnimationValue;
+        if (hasWordHighlight) {
+          // 逐字歌词不能让整行参与 activeStyle 的颜色动画。
+          // 高亮颜色由 drawHighlight() 单独控制。
+          animatedMainColor = normalColor;
+          highlightOpacity = 1.0;
+        } else {
+          animatedMainColor = Color.lerp(
+            normalColor,
+            activeColor,
+            switchState.enterAnimationValue,
+          );
+          highlightOpacity = switchState.enterAnimationValue;
+        }
       } else if (index == switchState.exitIndex) {
         animatedMainColor = Color.lerp(
-            activeColor, normalColor, switchState.exitAnimationValue);
+          activeColor,
+          normalColor,
+          switchState.exitAnimationValue,
+        );
         highlightOpacity = 1.0 - switchState.exitAnimationValue;
       }
     }
