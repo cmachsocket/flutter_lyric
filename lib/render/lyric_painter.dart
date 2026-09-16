@@ -45,28 +45,41 @@ class LyricPainter extends CustomPainter {
     final metrics = layout.metrics;
 
     if (!_debugLyric) {
-      canvas.clipRect(Rect.fromLTRB(-layoutStyle.contentPadding.left, 0,
-          size.width + layoutStyle.contentPadding.right, size.height));
+      canvas.clipRect(
+        Rect.fromLTRB(
+          -layoutStyle.contentPadding.left,
+          0,
+          size.width + layoutStyle.contentPadding.right,
+          size.height,
+        ),
+      );
     }
 
     final selectionPosition = layout.selectionAnchorPosition;
+
     if (_debugLyric) {
       final activePosition = layout.activeAnchorPosition;
       final debugPaint = Paint()..color = layoutStyle.selectedColor;
+
       canvas.drawLine(
         Offset(0, selectionPosition),
         Offset(size.width, selectionPosition),
         debugPaint,
       );
+
       canvas.drawLine(
         Offset(0, activePosition),
         Offset(size.width, activePosition),
         debugPaint,
       );
     }
+
     var totalTranslateY = -scrollY;
+
     canvas.translate(0, -scrollY);
+
     var selectedIndex = -1;
+
     final showLineRects = <int, Rect>{};
     final halfLineGap = lineGap / 2;
     final contentHorizontal = layoutStyle.contentPadding.horizontal;
@@ -75,29 +88,50 @@ class LyricPainter extends CustomPainter {
     for (var i = 0; i < metrics.length; i++) {
       final isActive = i == playIndex;
       final lineHeight = layout.getLineHeight(isActive, i);
+
       totalTranslateY += lineHeight;
+
       if ((totalTranslateY + halfLineGap) >= selectionPosition &&
           selectedIndex == -1) {
         selectedIndex = i;
         onAnchorIndexChange(i);
       }
+
       if (totalTranslateY - lineHeight >= size.height) {
         break;
       }
+
       if (totalTranslateY > 0) {
-        showLineRects[i] = Rect.fromLTWH(0, totalTranslateY - lineHeight,
-            size.width + contentHorizontal, lineHeight);
+        showLineRects[i] = Rect.fromLTWH(
+          0,
+          totalTranslateY - lineHeight,
+          size.width + contentHorizontal,
+          lineHeight,
+        );
+
         if (!activeLineOnly || isActive) {
-          drawLine(canvas, metrics[i], size, i, selectedIndex == i);
+          drawLine(
+            canvas,
+            metrics[i],
+            size,
+            i,
+            selectedIndex == i,
+          );
         }
       }
+
       totalTranslateY += lineGap;
+
       if (_debugLyric) {
-        canvas.drawRect(Rect.fromLTWH(0, 0, size.width, lineHeight),
-            Paint()..color = Colors.purple.withAlpha(50));
+        canvas.drawRect(
+          Rect.fromLTWH(0, 0, size.width, lineHeight),
+          Paint()..color = Colors.purple.withAlpha(50),
+        );
       }
+
       canvas.translate(0, lineHeight + lineGap);
     }
+
     onShowLineRectsChange(showLineRects);
   }
 
@@ -109,9 +143,13 @@ class LyricPainter extends CustomPainter {
     double highlightTotalWidth = 0,
     double animationOpacity = 1.0,
   }) {
-    if (highlightTotalWidth < 0 || animationOpacity <= 0) return;
+    if (highlightTotalWidth < 0 || animationOpacity <= 0) {
+      return;
+    }
+
     final activeHighlightColor = layout.style.activeHighlightColor;
     final activeHighlightGradient = layout.style.activeHighlightGradient;
+
     if (activeHighlightColor == null && activeHighlightGradient == null) {
       return;
     }
@@ -120,12 +158,20 @@ class LyricPainter extends CustomPainter {
     var accWidth = 0.0;
 
     final grad = activeHighlightGradient ??
-        LinearGradient(colors: [activeHighlightColor!, activeHighlightColor]);
+        LinearGradient(
+          colors: [
+            activeHighlightColor!,
+            activeHighlightColor,
+          ],
+        );
 
     final opColors = animationOpacity < 1.0
         ? grad.colors
-            .map((c) =>
-                c.withValues(alpha: (c.a * animationOpacity).clamp(0.0, 1.0)))
+            .map(
+              (c) => c.withValues(
+                alpha: (c.a * animationOpacity).clamp(0.0, 1.0),
+              ),
+            )
             .toList()
         : grad.colors;
 
@@ -133,16 +179,20 @@ class LyricPainter extends CustomPainter {
     final fadeEndColor = opColors.last.withValues(alpha: 0);
 
     const pad = 2;
+
     final segments = <_HighlightSegment>[];
     Rect? layerBounds;
 
     void addSegment(Rect rect, ui.Shader shader) {
-      segments.add(_HighlightSegment(rect, shader));
+      segments.add(
+        _HighlightSegment(rect, shader),
+      );
+
       layerBounds =
           layerBounds == null ? rect : layerBounds!.expandToInclude(rect);
     }
 
-    for (var line in metrics) {
+    for (final line in metrics) {
       if (highlightFullMode) {
         final rect = Rect.fromLTWH(
           line.left - pad,
@@ -150,6 +200,7 @@ class LyricPainter extends CustomPainter {
           line.width + pad,
           line.ascent + line.descent,
         );
+
         addSegment(
           rect,
           LinearGradient(
@@ -161,16 +212,22 @@ class LyricPainter extends CustomPainter {
             transform: grad.transform,
           ).createShader(rect),
         );
+
         accWidth += line.width;
         continue;
       }
 
       final fadeEnd = highlightTotalWidth - accWidth;
-      if (fadeEnd <= 0) break;
+
+      if (fadeEnd <= 0) {
+        break;
+      }
 
       final top = line.baseline - line.ascent;
       final height = line.ascent + line.descent;
+
       final fadeWidth = extraFadeWidth > 0 ? extraFadeWidth : 0.0;
+
       final fadeStart = fadeEnd - fadeWidth;
       final solidEnd = fadeWidth > 0 ? fadeStart : fadeEnd;
 
@@ -181,6 +238,7 @@ class LyricPainter extends CustomPainter {
           line.left + solidEnd.clamp(0.0, line.width),
           top + height,
         );
+
         addSegment(
           solidRect,
           LinearGradient(
@@ -201,16 +259,23 @@ class LyricPainter extends CustomPainter {
           line.left + fadeEnd,
           top + height,
         );
+
         addSegment(
           fadeRect,
-          LinearGradient(colors: [opColors.last, fadeEndColor])
-              .createShader(fadeRect),
+          LinearGradient(
+            colors: [
+              opColors.last,
+              fadeEndColor,
+            ],
+          ).createShader(fadeRect),
         );
       }
 
       accWidth += line.width;
 
-      if (highlightTotalWidth <= accWidth) break;
+      if (highlightTotalWidth <= accWidth) {
+        break;
+      }
     }
 
     if (segments.isNotEmpty && layerBounds != null) {
@@ -230,15 +295,34 @@ class LyricPainter extends CustomPainter {
     List<_HighlightSegment> segments,
   ) {
     canvas.save();
+
     canvas.clipRect(bounds);
-    canvas.saveLayer(bounds, Paint());
+
+    canvas.saveLayer(
+      bounds,
+      Paint(),
+    );
+
     final paint = Paint();
+
     for (final segment in segments) {
       paint.shader = segment.shader;
-      canvas.drawRect(segment.rect, paint);
+      canvas.drawRect(
+        segment.rect,
+        paint,
+      );
     }
-    canvas.saveLayer(bounds, Paint()..blendMode = BlendMode.dstIn);
-    maskPainter.paint(canvas, Offset.zero);
+
+    canvas.saveLayer(
+      bounds,
+      Paint()..blendMode = BlendMode.dstIn,
+    );
+
+    maskPainter.paint(
+      canvas,
+      Offset.zero,
+    );
+
     canvas.restore();
     canvas.restore();
     canvas.restore();
@@ -252,47 +336,88 @@ class LyricPainter extends CustomPainter {
     TextPainter painter,
     Size size,
   ) {
-    if (layout.style.enableSwitchAnimation != true) return 0;
+    if (layout.style.enableSwitchAnimation != true) {
+      return 0;
+    }
+
     double calcTranslateX(double contentWidth) {
       var transX = 0.0;
+
       if (layout.style.contentAlignment == CrossAxisAlignment.center) {
         transX = contentWidth / 2;
       } else if (layout.style.contentAlignment == CrossAxisAlignment.end) {
         transX = contentWidth;
       }
+
       return transX;
     }
 
     final transX = calcTranslateX(painter.width);
+
     if (index == switchState.enterIndex) {
       final enterAnimationValue = switchState.enterAnimationValue;
+
       final fromHeight = metric.height;
       final toHeight = metric.activeHeight;
       final transY = toHeight;
-      canvas.translate(transX, transY);
+
+      canvas.translate(
+        transX,
+        transY,
+      );
+
       canvas.scale(
-          1 - ((toHeight - fromHeight) / toHeight) * (1 - enterAnimationValue));
-      canvas.translate(-transX, -transY);
+        1 - ((toHeight - fromHeight) / toHeight) * (1 - enterAnimationValue),
+      );
+
+      canvas.translate(
+        -transX,
+        -transY,
+      );
     }
+
     // EXIT
     if (index == switchState.exitIndex) {
       final exitAnimationValue = switchState.exitAnimationValue;
+
       final fromHeight = metric.activeHeight;
       final toHeight = metric.height;
       final transY = 0.0;
-      canvas.translate(transX, transY);
+
+      canvas.translate(
+        transX,
+        transY,
+      );
+
       final scale =
           ((fromHeight - toHeight) / fromHeight) * (1 - exitAnimationValue);
-      canvas.scale(1 + scale);
-      canvas.translate(-transX, -transY);
+
+      canvas.scale(
+        1 + scale,
+      );
+
+      canvas.translate(
+        -transX,
+        -transY,
+      );
+
       return toHeight * scale;
     }
+
     return 0;
   }
 
-  Color _resolveColor(TextStyle baseStyle, Color selectColor, bool isSelecting,
-      bool isInAnchorArea, Color? customColor) {
-    if (isSelecting && isInAnchorArea) return selectColor;
+  Color _resolveColor(
+    TextStyle baseStyle,
+    Color selectColor,
+    bool isSelecting,
+    bool isInAnchorArea,
+    Color? customColor,
+  ) {
+    if (isSelecting && isInAnchorArea) {
+      return selectColor;
+    }
+
     return customColor ?? baseStyle.color!;
   }
 
@@ -307,167 +432,374 @@ class LyricPainter extends CustomPainter {
     final layoutStyle = layout.style;
 
     final painter = isActive ? metric.activeTextPainter : metric.textPainter;
+
     final oldSpan = painter.text! as TextSpan;
 
     final hasWordHighlight = metric.words?.isNotEmpty == true;
 
+    /*
+     * ============================================================
+     * 关键逻辑
+     * ============================================================
+     *
+     * activeTextPainter 是按照 activeStyle 创建的。
+     *
+     * 例如：
+     *
+     *   textStyle.color       = 灰色
+     *   activeStyle.color     = 蓝色
+     *
+     * 那么：
+     *
+     *   metric.activeTextPainter.text.style.color
+     *       == 蓝色
+     *
+     * 但是逐字歌词不能直接把这个颜色作为底色。
+     *
+     * 逐字歌词应该是：
+     *
+     *   灰色文字
+     *       +
+     *   activeHighlightColor 覆盖已经唱过的部分
+     *
+     * 因此这里只把 activeStyle 的 color 替换成
+     * 普通歌词颜色，同时保留 activeStyle 的其它属性：
+     *
+     *   fontSize
+     *   fontWeight
+     *   fontFamily
+     *   height
+     *   letterSpacing
+     *   shadows
+     *   foreground
+     *   background
+     *   ...
+     *
+     * ============================================================
+     */
+    final baseStyle = hasWordHighlight
+        ? oldSpan.style!.copyWith(
+            color: layoutStyle.textStyle.color,
+          )
+        : oldSpan.style!;
+
     double highlightOpacity = 1.0;
     Color? animatedMainColor;
 
-    if (style.enableSwitchAnimation) {
+    /*
+     * 普通歌词：
+     *
+     *   normalColor
+     *       ↓
+     *   activeColor
+     *
+     * 逐字歌词：
+     *
+     *   始终使用普通歌词底色
+     *
+     * 因为逐字歌词的 active color 已经由
+     * drawHighlight() 单独负责。
+     */
+    if (style.enableSwitchAnimation && !hasWordHighlight) {
       final normalColor = layoutStyle.textStyle.color;
+
       final activeColor = layoutStyle.activeStyle.color;
 
       if (index == switchState.enterIndex) {
-        if (hasWordHighlight) {
-          // 逐字歌词：
-          // 底层始终保持普通歌词颜色，
-          // 不参与 activeStyle.color 的行切换动画。
-          animatedMainColor = normalColor;
-          highlightOpacity = 1.0;
-        } else {
-          animatedMainColor = Color.lerp(
-            normalColor,
-            activeColor,
-            switchState.enterAnimationValue,
-          );
-          highlightOpacity = switchState.enterAnimationValue;
-        }
+        animatedMainColor = Color.lerp(
+          normalColor,
+          activeColor,
+          switchState.enterAnimationValue,
+        );
+
+        highlightOpacity = switchState.enterAnimationValue;
       } else if (index == switchState.exitIndex) {
-        if (hasWordHighlight) {
-          // 如果退出的也是逐字歌词，不要把整行 activeColor
-          // 再显示出来。
-          animatedMainColor = normalColor;
-          highlightOpacity = 0.0;
-        } else {
-          animatedMainColor = Color.lerp(
-            activeColor,
-            normalColor,
-            switchState.exitAnimationValue,
-          );
-          highlightOpacity = 1.0 - switchState.exitAnimationValue;
-        }
+        animatedMainColor = Color.lerp(
+          activeColor,
+          normalColor,
+          switchState.exitAnimationValue,
+        );
+
+        highlightOpacity = 1.0 - switchState.exitAnimationValue;
       }
     }
 
-    final targetColor = _resolveColor(oldSpan.style!, layoutStyle.selectedColor,
-        isSelecting, isInAnchorArea, animatedMainColor);
+    /*
+     * 注意这里使用 baseStyle，而不是 oldSpan.style!。
+     *
+     * 这是修复「动画结束后整行重新变蓝」的核心。
+     */
+    final targetColor = _resolveColor(
+      baseStyle,
+      layoutStyle.selectedColor,
+      isSelecting,
+      isInAnchorArea,
+      animatedMainColor,
+    );
+
     final needsRestyle = targetColor != oldSpan.style!.color;
 
     if (needsRestyle) {
       painter.text = TextSpan(
         text: oldSpan.text,
-        style: oldSpan.style!.copyWith(color: targetColor),
+        style: oldSpan.style!.copyWith(
+          color: targetColor,
+        ),
       );
     }
+
     canvas.save();
-    canvas.translate(calcContentAliginOffset(painter.width, size.width), 0);
+
+    canvas.translate(
+      calcContentAliginOffset(
+        painter.width,
+        size.width,
+      ),
+      0,
+    );
+
     if (_debugLyric) {
       canvas.drawRect(
-          Rect.fromLTWH(0, 0, painter.width, painter.height),
-          Paint()
-            ..color = !isActive
-                ? Colors.blue.withAlpha(50)
-                : Colors.red.withAlpha(50));
+        Rect.fromLTWH(
+          0,
+          0,
+          painter.width,
+          painter.height,
+        ),
+        Paint()
+          ..color =
+              !isActive ? Colors.blue.withAlpha(50) : Colors.red.withAlpha(50),
+      );
     }
+
     final switchOffset = handleSwitchAnimation(
-        canvas, metric, index, switchState, painter, size);
-    painter.paint(canvas, Offset.zero);
+      canvas,
+      metric,
+      index,
+      switchState,
+      painter,
+      size,
+    );
+
+    /*
+     * 先绘制底层文字。
+     *
+     * 对逐字歌词：
+     *   这里一定是普通歌词颜色。
+     */
+    painter.paint(
+      canvas,
+      Offset.zero,
+    );
+
     if (needsRestyle) {
       painter.text = oldSpan;
     }
+
+    /*
+     * ============================================================
+     * 当前活动行
+     * ============================================================
+     */
     if (isActive) {
-      drawHighlight(
-          canvas, size, metric.activeMaskPainter, metric.activeMetrics,
-          highlightTotalWidth: metric.words?.isNotEmpty == true
-              ? activeHighlightWidth
-              : double.infinity,
-          animationOpacity: highlightOpacity);
-    } else if (index == switchState.exitIndex &&
-        switchState.exitAnimationValue < 1 &&
-        style.enableSwitchAnimation) {
-      drawHighlight(canvas, size, metric.textMaskPainter, metric.metrics,
+      if (hasWordHighlight) {
+        /*
+         * 逐字歌词：
+         *
+         * 只绘制 activeHighlightWidth 范围。
+         *
+         * 所以最终效果：
+         *
+         *   [蓝色][蓝色][蓝色][灰色][灰色][灰色]
+         *
+         * 而不是：
+         *
+         *   [蓝色][蓝色][蓝色][蓝色][蓝色][蓝色]
+         */
+        drawHighlight(
+          canvas,
+          size,
+          metric.activeMaskPainter,
+          metric.activeMetrics,
+          highlightTotalWidth: activeHighlightWidth,
+          animationOpacity: 1.0,
+        );
+      } else {
+        /*
+         * 普通歌词没有逐字进度，
+         * 整行 activeHighlight 可以继续使用。
+         */
+        drawHighlight(
+          canvas,
+          size,
+          metric.activeMaskPainter,
+          metric.activeMetrics,
           highlightTotalWidth: double.infinity,
-          animationOpacity: highlightOpacity);
+          animationOpacity: highlightOpacity,
+        );
+      }
     }
+
+    /*
+     * ============================================================
+     * EXIT
+     * ============================================================
+     *
+     * 普通歌词可以继续做整行退出动画。
+     *
+     * 逐字歌词不能在这里画：
+     *
+     *   highlightTotalWidth: double.infinity
+     *
+     * 否则退出当前行的时候又会短暂出现整行蓝色。
+     */
+    else if (index == switchState.exitIndex &&
+        switchState.exitAnimationValue < 1 &&
+        style.enableSwitchAnimation &&
+        !hasWordHighlight) {
+      drawHighlight(
+        canvas,
+        size,
+        metric.textMaskPainter,
+        metric.metrics,
+        highlightTotalWidth: double.infinity,
+        animationOpacity: highlightOpacity,
+      );
+    }
+
     canvas.restore();
+
     final mainHeight = isActive ? metric.activeHeight : metric.height;
+
+    /*
+     * ============================================================
+     * Translation
+     * ============================================================
+     */
     if (metric.line.translation?.isNotEmpty == true) {
       final tPainter = metric.translationTextPainter;
+
       final tOldSpan = tPainter.text! as TextSpan;
 
       Color? animatedTranslationColor;
+
       if (style.enableSwitchAnimation) {
         final normalTransColor =
             tOldSpan.style!.color ?? layoutStyle.translationStyle.color;
+
         final activeTransColor =
             layoutStyle.translationActiveColor ?? normalTransColor;
 
         if (index == switchState.enterIndex) {
-          animatedTranslationColor = Color.lerp(normalTransColor,
-              activeTransColor, switchState.enterAnimationValue);
+          animatedTranslationColor = Color.lerp(
+            normalTransColor,
+            activeTransColor,
+            switchState.enterAnimationValue,
+          );
         } else if (index == switchState.exitIndex) {
-          animatedTranslationColor = Color.lerp(activeTransColor,
-              normalTransColor, switchState.exitAnimationValue);
+          animatedTranslationColor = Color.lerp(
+            activeTransColor,
+            normalTransColor,
+            switchState.exitAnimationValue,
+          );
         }
       }
 
       final tBaseColor = isActive
           ? (layoutStyle.translationActiveColor ?? tOldSpan.style!.color)
           : tOldSpan.style!.color;
+
       final tTargetColor = _resolveColor(
-          tOldSpan.style!.copyWith(color: tBaseColor),
-          layoutStyle.selectedTranslationColor,
-          isSelecting,
-          isInAnchorArea,
-          animatedTranslationColor);
+        tOldSpan.style!.copyWith(
+          color: tBaseColor,
+        ),
+        layoutStyle.selectedTranslationColor,
+        isSelecting,
+        isInAnchorArea,
+        animatedTranslationColor,
+      );
+
       final tNeedsRestyle = tTargetColor != tOldSpan.style!.color;
 
       if (tNeedsRestyle) {
         tPainter.text = TextSpan(
           text: tOldSpan.text,
-          style: tOldSpan.style!.copyWith(color: tTargetColor),
+          style: tOldSpan.style!.copyWith(
+            color: tTargetColor,
+          ),
         );
       }
+
       canvas.save();
-      canvas.translate(calcContentAliginOffset(tPainter.width, size.width), 0);
-      canvas.translate(0, switchOffset);
+
+      canvas.translate(
+        calcContentAliginOffset(
+          tPainter.width,
+          size.width,
+        ),
+        0,
+      );
+
+      canvas.translate(
+        0,
+        switchOffset,
+      );
+
       try {
         tPainter.paint(
           canvas,
-          Offset(0, mainHeight + layoutStyle.translationLineGap),
+          Offset(
+            0,
+            mainHeight + layoutStyle.translationLineGap,
+          ),
         );
       } catch (_) {
-        // 避免系统字体变更触发 assert(debugSize == size);
+        // 避免系统字体变更触发
+        // assert(debugSize == size);
       }
+
       if (tNeedsRestyle) {
         tPainter.text = tOldSpan;
       }
-      canvas.translate(0, -switchOffset);
+
+      canvas.translate(
+        0,
+        -switchOffset,
+      );
+
       canvas.restore();
     }
   }
 
-  double calcContentAliginOffset(double contentWidth, double containerWidth) {
+  double calcContentAliginOffset(
+    double contentWidth,
+    double containerWidth,
+  ) {
     switch (layout.style.contentAlignment) {
       case CrossAxisAlignment.start:
         return 0;
+
       case CrossAxisAlignment.end:
         return containerWidth - contentWidth;
+
       case CrossAxisAlignment.center:
         return (containerWidth - contentWidth) / 2;
+
       default:
         return 0;
     }
   }
 
   @override
-  bool shouldRepaint(covariant LyricPainter oldDelegate) {
+  bool shouldRepaint(
+    covariant LyricPainter oldDelegate,
+  ) {
     final shouldRepaint = layout != oldDelegate.layout ||
         playIndex != oldDelegate.playIndex ||
         scrollY != oldDelegate.scrollY ||
         activeHighlightWidth != oldDelegate.activeHighlightWidth ||
         switchState != oldDelegate.switchState;
+
     return shouldRepaint;
   }
 }
